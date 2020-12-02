@@ -163,7 +163,6 @@ public interface DiscoveryViewModel {
     private final CurrentConfigType currentConfigType;
     private final BooleanPreferenceType firstSessionPreference;
     private final WebClientType webClient;
-    private final OkHttpClient okHttpClient;
 
     public ViewModel(final @NonNull Environment environment) {
       super(environment);
@@ -174,7 +173,6 @@ public interface DiscoveryViewModel {
       this.currentUserType = environment.currentUser();
       this.firstSessionPreference = environment.firstSessionPreference();
       this.webClient = environment.webClient();
-      this.okHttpClient = environment.okHttpClient();
 
       this.buildCheck.bind(this, this.webClient);
 
@@ -220,15 +218,6 @@ public interface DiscoveryViewModel {
         .map(it -> it.first)
         .filter(KSUri::isVerificationEmailUrl);
 
-      /*uriFromVerification
-        .observeOn(Schedulers.io())
-        .subscribeOn(Schedulers.io())
-        .switchMap(this::makeCall)
-        .distinctUntilChanged(this::isSameResponse)
-        .compose(bindToLifecycle())
-        .subscribe(this::showSnackBar);*/
-
-      //https://staging.kickstarter.com/profile/verify_email?at=33189e847432a9ad&ref=ksr_email_user_email_verification
       uriFromVerification
             .map(UriExt::getTokenFromVerifyEmailUri)
             .switchMap(this.webClient::verifyEmail)
@@ -448,10 +437,6 @@ public interface DiscoveryViewModel {
         .subscribe(this.showQualtricsSurvey);
     }
 
-    private Boolean isSameResponse(final @NonNull Response first, final @NonNull Response second) {
-      return first.code() == second.code() && first.message() == second.message();
-    }
-
     private void showSnackBar(final @NonNull EmailVerificationResponseEnvelope envelope) {
       final int responseCode = envelope.code();
       final String message = envelope.message();
@@ -479,18 +464,6 @@ public interface DiscoveryViewModel {
         return R.drawable.ic_menu_indicator;
       } else {
         return R.drawable.ic_menu;
-      }
-    }
-
-    private Observable<Response> makeCall(final @NonNull Uri uri) {
-      final String url = uri.toString();
-      final Request request = new Request.Builder().url(url).build();
-
-      try {
-        final Response response = this.okHttpClient.newCall(request).execute();
-        return Observable.just(response);
-      } catch (IOException exception) {
-        return Observable.just(null);
       }
     }
 
