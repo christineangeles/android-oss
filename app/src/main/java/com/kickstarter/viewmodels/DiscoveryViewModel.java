@@ -21,6 +21,7 @@ import com.kickstarter.libs.utils.ObjectUtils;
 import com.kickstarter.libs.utils.StringUtils;
 import com.kickstarter.libs.utils.UrlUtils;
 import com.kickstarter.libs.utils.extensions.ConfigExtension;
+import com.kickstarter.libs.utils.extensions.UriExt;
 import com.kickstarter.models.Category;
 import com.kickstarter.models.QualtricsIntercept;
 import com.kickstarter.models.QualtricsResult;
@@ -29,6 +30,8 @@ import com.kickstarter.services.ApiClientType;
 import com.kickstarter.services.DiscoveryParams;
 import com.kickstarter.services.KSUri;
 import com.kickstarter.services.WebClientType;
+import com.kickstarter.services.apiresponses.EmailVerificationResponseEnvelope;
+import com.kickstarter.services.apiresponses.ErrorEnvelope;
 import com.kickstarter.services.apiresponses.InternalBuildEnvelope;
 import com.kickstarter.ui.activities.DiscoveryActivity;
 import com.kickstarter.ui.adapters.DiscoveryDrawerAdapter;
@@ -217,13 +220,22 @@ public interface DiscoveryViewModel {
         .map(it -> it.first)
         .filter(KSUri::isVerificationEmailUrl);
 
-      uriFromVerification
+      /*uriFromVerification
         .observeOn(Schedulers.io())
         .subscribeOn(Schedulers.io())
         .switchMap(this::makeCall)
         .distinctUntilChanged(this::isSameResponse)
         .compose(bindToLifecycle())
-        .subscribe(this::showSnackBar);
+        .subscribe(this::showSnackBar);*/
+
+      //https://staging.kickstarter.com/profile/verify_email?at=33189e847432a9ad&ref=ksr_email_user_email_verification
+      uriFromVerification
+            .map(UriExt::getTokenFromVerifyEmailUri)
+            .switchMap(this.webClient::verifyEmail)
+            //.map(ErrorEnvelope::errorMessage);
+            .distinctUntilChanged()
+            .compose(bindToLifecycle())
+            .subscribe(this::showSnackBar);
 
       final Observable<DiscoveryParams> paramsFromIntent = intent()
         .flatMap(i -> DiscoveryIntentMapper.params(i, this.apiClient));
@@ -438,6 +450,12 @@ public interface DiscoveryViewModel {
 
     private Boolean isSameResponse(final @NonNull Response first, final @NonNull Response second) {
       return first.code() == second.code() && first.message() == second.message();
+    }
+
+    private void showSnackBar(final @NonNull EmailVerificationResponseEnvelope envelope) {
+      final int responseCode = envelope.code();
+      final String message = envelope.message();
+      this.codeAndMessage.onNext(new Pair(responseCode, message));
     }
 
     private void showSnackBar(final @NonNull Response response) {

@@ -17,9 +17,18 @@ abstract class EmailVerificationResponseEnvelope: Parcelable {
         abstract fun build(): EmailVerificationResponseEnvelope
     }
 
-    open fun builder(): Builder {
-        return AutoParcel_EmailVerificationResponseEnvelope.Builder()
+    @Override
+    override fun equals(other: Any?): Boolean {
+        return if (other is EmailVerificationResponseEnvelope) {
+            other.code() == this.code() && other.message() == this.message()
+        } else super.equals(other)
     }
 
     abstract fun toBuilder(): Builder
+
+    companion object {
+        fun builder(): Builder {
+            return AutoParcel_EmailVerificationResponseEnvelope.Builder()
+        }
+    }
 }

@@ -12,6 +12,12 @@ public interface WebService {
   @GET("/mobile/beta/ping")
   Observable<Response<InternalBuildEnvelope>> pingBeta();
 
-  @GET("")
-  Observable<Response<EmailVerificationResponseEnvelope>> verifyEmail(@Query("token") String token);
+  /**
+   * Sample call to verify email service "/profile/verify_email?at={TOKEN}&ref=ksr_email_user_email_verification"
+   * @param token
+   * @return
+   */
+  @GET("/profile/verify_email")
+  Observable<Response<EmailVerificationResponseEnvelope>> verifyEmail(@Query("at") String token,
+                                                                      @Query("ref") String ref);
 }
